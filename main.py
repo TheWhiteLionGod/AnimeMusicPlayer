@@ -81,6 +81,9 @@ class AudioInstance:
         new_time = max(min(new_time, self.get_media_duration(blocking=True)), 0)  # type: ignore
         self.player.set_time(new_time)  # type: ignore
 
+    def toggle_pause(self) -> None:
+        self.player.pause()  # type: ignore
+
     def stop_audio(self) -> None:
         self.player.stop()  # type: ignore
 
@@ -147,12 +150,13 @@ def create_progress_bar(name: str) -> tqdm[NoReturn]:
 
 def main():
     # animes = get_animes(USERNAME)
-    urls = get_theme_urls("Botan Kamiina Fully Blossoms When Drunk")
-    AudioInstance().play_from_url(urls["KamiinaBotan-ED1"])
+    urls = get_theme_urls("Agents Of The Four Seasons: Dance Of Spring")
+    AudioInstance().play_from_url(urls["ShunkashuutouDaikoushaHaruNoMai-ED1"])
 
-    pbar = create_progress_bar("KamiinaBotan-ED1")
+    pbar = create_progress_bar("ShunkashuutouDaikoushaHaruNoMai-ED1")
 
     keyboard.add_hotkey("ctrl+shift+j", AudioInstance().move_playhead, (-10_000,))
+    keyboard.add_hotkey("ctrl+shift+k", AudioInstance().toggle_pause)
     keyboard.add_hotkey("ctrl+shift+l", AudioInstance().move_playhead, (10_000,))
 
     try: 
