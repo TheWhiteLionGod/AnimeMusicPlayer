@@ -1,5 +1,7 @@
+from typing import Self, Callable, Any
 from dotenv import load_dotenv
-from typing import Self
+from datetime import timedelta
+from tqdm import tqdm
 import requests
 import vlc  # type: ignore
 import os
@@ -41,13 +43,15 @@ class AudioInstance:
         return cls._instance
 
     def __init__(self) -> None:
+        if hasattr(self, "player"): 
+            return
+
         self.vlc_instance = vlc.Instance(["--no-video", "--quiet", "--network-caching=2000"])  # type: ignore
 
         self.player = self.vlc_instance.media_player_new()  # type: ignore
         self.player.audio_set_volume(70)  # type: ignore
 
-        event_manager = self.player.event_manager()  # type: ignore
-        event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, AudioInstance.song_finished_callback)  # type: ignore
+        self.attach_callback_to_event(vlc.EventType.MediaPlayerEndReached, AudioInstance.song_finished_callback)  # type: ignore
 
     def play_from_url(self, url: str) -> None:
         media = self.vlc_instance.media_new(url)  # type: ignore
@@ -55,6 +59,20 @@ class AudioInstance:
 
         AudioInstance.is_playing = True
         self.player.play()  # type: ignore
+
+    def attach_callback_to_event(
+            self, 
+            event_type: vlc.EventType,  # type: ignore
+            func: Callable[..., Any], 
+            *args: tuple[Any, ...]
+        ) -> None:
+        self.player.event_manager().event_attach(event_type, func, *args)  # type: ignore
+
+    type Miliseconds = int
+    def get_media_duration(self, *, blocking: bool = False) -> Miliseconds:
+        while blocking and self.player.get_length() <= 0:  # type: ignore
+            pass
+        return self.player.get_length()  # type: ignore
 
     def stop_audio(self) -> None:
         self.player.stop()  # type: ignore
@@ -98,17 +116,36 @@ def get_theme_urls(anime_name: str) -> dict[str, str]:
         for video in entry['videos']
     }
     return urls
-    
+
+def update_timestamp_callback(event: vlc.EventType, pbar: tqdm) -> None:  # type: ignore
+    cur_time: AudioInstance.Miliseconds = event.u.new_time  # type: ignore
+    pbar.n = cur_time / 1000
+
+    cur_ts = str(timedelta(milliseconds=cur_time)).split('.')[0][-5:] # type: ignore
+    total_ts = str(timedelta(seconds=pbar.total)).split('.')[0][-5:] # type: ignore
+
+    pbar.unit = f"{cur_ts}/{total_ts}"
+    pbar.refresh()
+
 def main():
     # animes = get_animes(USERNAME)
     urls = get_theme_urls("My Teen Romantic Comedy SNAFU")
     AudioInstance().play_from_url(urls["OreGairu-OP1"])
+
+    pbar = tqdm(
+        total=round(AudioInstance().get_media_duration(blocking=True) / 1000), 
+        unit="s", 
+        desc="OreGairu-OP1",
+        bar_format="{desc}: {percentage:3.0f}%|{bar}| {unit}"
+    )
+    AudioInstance().attach_callback_to_event(vlc.EventType.MediaPlayerTimeChanged, update_timestamp_callback, pbar)  # type: ignore
 
     try:
         while AudioInstance.is_playing:
             pass
     except KeyboardInterrupt:
         AudioInstance().stop_audio()
+        pbar.close()
 
 if __name__ == "__main__":
     main()
