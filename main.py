@@ -57,10 +57,11 @@ def get_theme_urls(anime_name: str) -> dict[str, str]:
     response.raise_for_status()
 
     data = response.json()
-    anime = data["search"]["anime"][0]
+    animes = data["search"]["anime"][0:5]
 
     urls: dict[str, str] = {
         video["filename"]: video["link"]
+        for anime in animes
         for theme in anime['animethemes']
         for entry in theme['animethemeentries']
         for video in entry['videos']
@@ -78,6 +79,7 @@ def play_audio(url: str) -> vlc.MediaPlayer:  # type: ignore
 
     media = vlc_instance.media_new(url)  # type: ignore
     player.set_media(media)  # type: ignore
+    player.audio_set_volume(70)  # type: ignore
 
     event_manager = player.event_manager()  # type: ignore
     event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, song_finished_callback)  # type: ignore
@@ -88,8 +90,8 @@ def play_audio(url: str) -> vlc.MediaPlayer:  # type: ignore
 
 def main():
     # animes = get_animes(USERNAME)
-    urls = get_theme_urls("Tantei Wa Mou, Shindeiru")
-    player = play_audio(urls["TanteiWaMouShindeiru-OP1"])  # type: ignore
+    urls = get_theme_urls("My Teen Romantic Comedy SNAFU")
+    player = play_audio(urls["OreGairu-OP1"])  # type: ignore
 
     try:
         while is_playing:
