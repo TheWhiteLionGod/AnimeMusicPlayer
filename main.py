@@ -72,26 +72,32 @@ def song_finished_callback(_: vlc.EventType):  # type: ignore
     global is_playing
     is_playing = False
 
-def play_audio(url: str) -> vlc.MediaPlayer:  # type: ignore
-    global is_playing
-    vlc_instance = vlc.Instance(["--no-video", "--quiet"])  # type: ignore
-    player = vlc_instance.media_player_new()  # type: ignore
+def create_player() -> tuple[vlc.Instance, vlc.MediaPlayer]:  # type: ignore
+    vlc_instance = vlc.Instance(["--no-video", "--quiet", "--network-caching=2000"])  # type: ignore
 
-    media = vlc_instance.media_new(url)  # type: ignore
-    player.set_media(media)  # type: ignore
+    player = vlc_instance.media_player_new()  # type: ignore
     player.audio_set_volume(70)  # type: ignore
 
     event_manager = player.event_manager()  # type: ignore
     event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, song_finished_callback)  # type: ignore
 
+    return vlc_instance, player  # type: ignore
+
+def play_audio(vlc_instance: vlc.Instance, player: vlc.MediaPlayer, url: str) -> None:  # type: ignore
+    global is_playing
+
+    media = vlc_instance.media_new(url)  # type: ignore
+    player.set_media(media)  # type: ignore
+
     is_playing = True
     player.play()  # type: ignore
-    return player  # type: ignore
-
+    
 def main():
+    vlc_instance, player = create_player()  # type: ignore
+
     # animes = get_animes(USERNAME)
     urls = get_theme_urls("My Teen Romantic Comedy SNAFU")
-    player = play_audio(urls["OreGairu-OP1"])  # type: ignore
+    play_audio(vlc_instance, player, urls["OreGairu-OP1"])  # type: ignore
 
     try:
         while is_playing:
