@@ -74,6 +74,11 @@ class AudioInstance:
             pass
         return self.player.get_length()  # type: ignore
 
+    def move_playhead(self, change: Miliseconds) -> None:
+        new_time = self.player.get_time() + change  # type: ignore
+        new_time = max(min(new_time, self.get_media_duration(blocking=True)), 0)  # type: ignore
+        self.player.set_time(new_time)  # type: ignore
+
     def stop_audio(self) -> None:
         self.player.stop()  # type: ignore
 
@@ -129,13 +134,13 @@ def update_timestamp_callback(event: vlc.EventType, pbar: tqdm) -> None:  # type
 
 def main():
     # animes = get_animes(USERNAME)
-    urls = get_theme_urls("My Teen Romantic Comedy SNAFU")
-    AudioInstance().play_from_url(urls["OreGairu-OP1"])
+    urls = get_theme_urls("Botan Kamiina Fully Blossoms When Drunk")
+    AudioInstance().play_from_url(urls["KamiinaBotan-ED1"])
 
     pbar = tqdm(
         total=round(AudioInstance().get_media_duration(blocking=True) / 1000), 
         unit="s", 
-        desc="OreGairu-OP1",
+        desc="KamiinaBotan-ED1",
         bar_format="{desc}: {percentage:3.0f}%|{bar}| {unit}"
     )
     AudioInstance().attach_callback_to_event(vlc.EventType.MediaPlayerTimeChanged, update_timestamp_callback, pbar)  # type: ignore
