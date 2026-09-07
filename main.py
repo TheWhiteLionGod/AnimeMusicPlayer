@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from typing import Self
 import requests
 import vlc  # type: ignore
 import os
@@ -30,7 +31,37 @@ query ($username: String) {
 }
 '''
 
-is_playing: bool = False
+class AudioInstance:
+    _instance: Self | None = None
+    is_playing: bool = False
+
+    def __new__(cls) -> Self:
+        if cls._instance == None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self) -> None:
+        self.vlc_instance = vlc.Instance(["--no-video", "--quiet", "--network-caching=2000"])  # type: ignore
+
+        self.player = self.vlc_instance.media_player_new()  # type: ignore
+        self.player.audio_set_volume(70)  # type: ignore
+
+        event_manager = self.player.event_manager()  # type: ignore
+        event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, AudioInstance.song_finished_callback)  # type: ignore
+
+    def play_from_url(self, url: str) -> None:
+        media = self.vlc_instance.media_new(url)  # type: ignore
+        self.player.set_media(media)  # type: ignore
+
+        AudioInstance.is_playing = True
+        self.player.play()  # type: ignore
+
+    def stop_audio(self) -> None:
+        self.player.stop()  # type: ignore
+
+    @staticmethod
+    def song_finished_callback(_: vlc.EventType):  # type: ignore
+        AudioInstance.is_playing = False
 
 def get_animes(username: str) -> dict[str, float]:
     variables: dict[str, str] = {'username': username}
@@ -67,43 +98,17 @@ def get_theme_urls(anime_name: str) -> dict[str, str]:
         for video in entry['videos']
     }
     return urls
-
-def song_finished_callback(_: vlc.EventType):  # type: ignore
-    global is_playing
-    is_playing = False
-
-def create_player() -> tuple[vlc.Instance, vlc.MediaPlayer]:  # type: ignore
-    vlc_instance = vlc.Instance(["--no-video", "--quiet", "--network-caching=2000"])  # type: ignore
-
-    player = vlc_instance.media_player_new()  # type: ignore
-    player.audio_set_volume(70)  # type: ignore
-
-    event_manager = player.event_manager()  # type: ignore
-    event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, song_finished_callback)  # type: ignore
-
-    return vlc_instance, player  # type: ignore
-
-def play_audio(vlc_instance: vlc.Instance, player: vlc.MediaPlayer, url: str) -> None:  # type: ignore
-    global is_playing
-
-    media = vlc_instance.media_new(url)  # type: ignore
-    player.set_media(media)  # type: ignore
-
-    is_playing = True
-    player.play()  # type: ignore
     
 def main():
-    vlc_instance, player = create_player()  # type: ignore
-
     # animes = get_animes(USERNAME)
     urls = get_theme_urls("My Teen Romantic Comedy SNAFU")
-    play_audio(vlc_instance, player, urls["OreGairu-OP1"])  # type: ignore
+    AudioInstance().play_from_url(urls["OreGairu-OP1"])
 
     try:
-        while is_playing:
+        while AudioInstance.is_playing:
             pass
     except KeyboardInterrupt:
-        player.stop()  # type: ignore
+        AudioInstance().stop_audio()
 
 if __name__ == "__main__":
     main()
