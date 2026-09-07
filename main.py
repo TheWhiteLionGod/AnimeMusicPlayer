@@ -37,7 +37,6 @@ query ($username: String) {
 
 class AudioInstance:
     _instance: Self | None = None
-    is_playing: bool = False
 
     def __new__(cls) -> Self:
         if cls._instance == None:
@@ -53,13 +52,13 @@ class AudioInstance:
         self.player = self.vlc_instance.media_player_new()  # type: ignore
         self.player.audio_set_volume(70)  # type: ignore
 
-        self.attach_callback_to_event(vlc.EventType.MediaPlayerEndReached, AudioInstance.song_finished_callback)  # type: ignore
+    @property
+    def is_playing(self) -> bool:
+        return self.player.is_playing()  # type: ignore
 
     def play_from_url(self, url: str) -> None:
         media = self.vlc_instance.media_new(url)  # type: ignore
         self.player.set_media(media)  # type: ignore
-
-        AudioInstance.is_playing = True
         self.player.play()  # type: ignore
 
     def attach_callback_to_event(
@@ -86,10 +85,6 @@ class AudioInstance:
 
     def stop_audio(self) -> None:
         self.player.stop()  # type: ignore
-
-    @staticmethod
-    def song_finished_callback(_: vlc.EventType):  # type: ignore
-        AudioInstance.is_playing = False
 
 def get_animes(username: str) -> dict[str, float]:
     variables: dict[str, str] = {'username': username}
