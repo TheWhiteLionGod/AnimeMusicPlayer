@@ -2,6 +2,7 @@ from typing import Self, Callable, Any
 from dotenv import load_dotenv
 from datetime import timedelta
 from tqdm import tqdm
+import keyboard
 import requests
 import vlc  # type: ignore
 import os
@@ -144,6 +145,9 @@ def main():
         bar_format="{desc}: {percentage:3.0f}%|{bar}| {unit}"
     )
     AudioInstance().attach_callback_to_event(vlc.EventType.MediaPlayerTimeChanged, update_timestamp_callback, pbar)  # type: ignore
+
+    keyboard.add_hotkey("ctrl+shift+j", AudioInstance().move_playhead, (-10_000,))
+    keyboard.add_hotkey("ctrl+shift+l", AudioInstance().move_playhead, (10_000,))
 
     try:
         while AudioInstance.is_playing:

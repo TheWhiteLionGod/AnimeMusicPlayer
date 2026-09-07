@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "dotenv>=0.9.9",
+    "keyboard>=0.13.5",
     "python-vlc>=3.0.21203",
     "requests>=2.34.2",
     "tqdm>=4.70.0",
