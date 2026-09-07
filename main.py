@@ -1,4 +1,5 @@
-from typing import Self, Callable, Any
+from __future__ import annotations
+from typing import Self, Callable, NoReturn, Any
 from dotenv import load_dotenv
 from datetime import timedelta
 from tqdm import tqdm
@@ -133,26 +134,31 @@ def update_timestamp_callback(event: vlc.EventType, pbar: tqdm) -> None:  # type
     pbar.unit = f"{cur_ts}/{total_ts}"
     pbar.refresh()
 
+def create_progress_bar(name: str) -> tqdm[NoReturn]:
+    pbar = tqdm(
+        total=round(AudioInstance().get_media_duration(blocking=True) / 1000), 
+        unit="s", 
+        desc=name,
+        bar_format="{desc}: {percentage:3.0f}%|{bar}| {unit}"
+    )
+
+    AudioInstance().attach_callback_to_event(vlc.EventType.MediaPlayerTimeChanged, update_timestamp_callback, pbar)  # type: ignore
+    return pbar
+
 def main():
     # animes = get_animes(USERNAME)
     urls = get_theme_urls("Botan Kamiina Fully Blossoms When Drunk")
     AudioInstance().play_from_url(urls["KamiinaBotan-ED1"])
 
-    pbar = tqdm(
-        total=round(AudioInstance().get_media_duration(blocking=True) / 1000), 
-        unit="s", 
-        desc="KamiinaBotan-ED1",
-        bar_format="{desc}: {percentage:3.0f}%|{bar}| {unit}"
-    )
-    AudioInstance().attach_callback_to_event(vlc.EventType.MediaPlayerTimeChanged, update_timestamp_callback, pbar)  # type: ignore
+    pbar = create_progress_bar("KamiinaBotan-ED1")
 
     keyboard.add_hotkey("ctrl+shift+j", AudioInstance().move_playhead, (-10_000,))
     keyboard.add_hotkey("ctrl+shift+l", AudioInstance().move_playhead, (10_000,))
 
-    try:
-        while AudioInstance.is_playing:
-            pass
-    except KeyboardInterrupt:
+    try: 
+        while AudioInstance.is_playing: pass
+
+    finally:
         AudioInstance().stop_audio()
         pbar.close()
 
