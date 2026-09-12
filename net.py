@@ -26,11 +26,10 @@ def get_theme_urls(anime_name: str) -> dict[str, str]:
     response.raise_for_status()
 
     data = response.json()
-    animes = data["search"]["anime"][0:5]
+    anime = data["search"]["anime"][0]
 
     urls: dict[str, str] = {
         video["filename"]: video["link"]
-        for anime in animes
         for theme in anime['animethemes']
         for entry in theme['animethemeentries']
         for video in entry['videos']
