@@ -1,8 +1,9 @@
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 
 load_dotenv()
-if (user := os.environ.get("username")) is None:
+if (user := os.environ.get("ANILIST_USER")) is None:
     raise ValueError("Username Environment Variable Not Set")
 USERNAME: str = user
 
@@ -27,3 +28,5 @@ query ($username: String) {
     }
 }
 '''
+
+SAVE_FILE: Path = Path("watchlist.txt")
