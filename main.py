@@ -1,6 +1,7 @@
 from datetime import timedelta
 from tqdm import tqdm
 import keyboard
+import time
 import vlc  # type: ignore
 
 from const import USERNAME
@@ -30,6 +31,10 @@ def mainloop(anime: str) -> None:
     for name, url in urls.items():
         AudioInstance().play_from_url(url)
 
+        if not AudioInstance().wait_until_playing(timeout=10.0):
+            print(f"TODO: Skipped {name}")
+            continue
+
         pbar = menu.create_progress_bar(
             name, 
             AudioInstance().get_media_duration(blocking=True)
@@ -42,9 +47,13 @@ def mainloop(anime: str) -> None:
         )
 
         try: 
-            while AudioInstance().is_playing: pass
+            while AudioInstance().is_playing:
+                time.sleep(0.1)
 
         finally:
+            AudioInstance().detach_callback_from_event(  # type: ignore
+                vlc.EventType.MediaPlayerTimeChanged  # type: ignore
+            )
             AudioInstance().stop_audio()
             pbar.close()
 

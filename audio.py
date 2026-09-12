@@ -1,11 +1,12 @@
 from typing import Self, Callable, Any
+import time
 import vlc  # type: ignore
 
 class AudioInstance:
     _instance: Self | None = None
 
     def __new__(cls) -> Self:
-        if cls._instance == None:
+        if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
@@ -19,13 +20,26 @@ class AudioInstance:
         self.player.audio_set_volume(70)  # type: ignore
 
     @property
-    def is_playing(self) -> None:
-        return self.player.is_playing() ^ (self.player.get_state() == vlc.State.Paused)  # type: ignore
+    def is_playing(self) -> bool:
+        state = self.player.get_state()  # type: ignore
+        return state in (vlc.State.Playing, vlc.State.Buffering, vlc.State.Opening, vlc.State.Paused)  # type: ignore
+
+    def wait_until_playing(self, timeout: float = 10.0) -> bool:
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            state = self.player.get_state()  # type: ignore
+            if state in (vlc.State.Playing, vlc.State.Paused):  # type: ignore
+                return True
+            if state in (vlc.State.Ended, vlc.State.Stopped, vlc.State.Error):  # type: ignore
+                return False
+            time.sleep(0.05)
+        return False
 
     def play_from_url(self, url: str) -> None:
+        self.stop_audio()
+
         media = self.vlc_instance.media_new(url)  # type: ignore
         self.player.set_media(media)  # type: ignore
-
         self.player.play()  # type: ignore
 
     def attach_callback_to_event(
@@ -36,15 +50,33 @@ class AudioInstance:
         ) -> None:
         self.player.event_manager().event_attach(event_type, func, *args)  # type: ignore
 
+    def detach_callback_from_event(
+            self, 
+            event_type: vlc.EventType  # type: ignore
+        ) -> None:
+        self.player.event_manager().event_detach(event_type)  # type: ignore
+
     type Miliseconds = int
-    def get_media_duration(self, *, blocking: bool = False) -> Miliseconds:
-        while blocking and self.player.get_length() <= 0:  # type: ignore
-            pass
-        return self.player.get_length()  # type: ignore
+    def get_media_duration(self, *, blocking: bool = False, timeout: float = 10.0) -> Miliseconds:
+        if not blocking:
+            return max(self.player.get_length(), 0)  # type: ignore
+
+        if not self.wait_until_playing(timeout=timeout / 2):
+            return 0
+
+        start_time = time.time()
+        while self.player.get_length() <= 0 and time.time() - start_time < timeout / 2:  # type: ignore
+            time.sleep(0.05)
+
+        return max(self.player.get_length(), 0)  # type: ignore
 
     def move_playhead(self, change: Miliseconds) -> None:
+        duration = self.get_media_duration(blocking=False)
+        if duration <= 0:
+            return
+
         new_time = self.player.get_time() + change  # type: ignore
-        new_time = max(min(new_time, self.get_media_duration(blocking=True)), 0)  # type: ignore
+        new_time = max(min(new_time, duration), 0)  # type: ignore
         self.player.set_time(new_time)  # type: ignore
 
     def toggle_pause(self) -> None:
