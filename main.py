@@ -64,9 +64,11 @@ def main():
         watchlist
     )
 
+    keyboard.add_hotkey("ctrl+shift+h", AudioInstance().set_playhead, (0,))
     keyboard.add_hotkey("ctrl+shift+j", AudioInstance().move_playhead, (-10_000,))
     keyboard.add_hotkey("ctrl+shift+k", AudioInstance().toggle_pause)
     keyboard.add_hotkey("ctrl+shift+l", AudioInstance().move_playhead, (10_000,))
+    keyboard.add_hotkey("ctrl+shift+;", AudioInstance().stop_audio)
 
     try:
         while True: 

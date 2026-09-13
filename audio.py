@@ -71,13 +71,16 @@ class AudioInstance:
         return max(self.player.get_length(), 0)  # type: ignore
 
     def move_playhead(self, change: Miliseconds) -> None:
+        new_time = self.player.get_time() + change  # type: ignore
+        self.set_playhead(new_time)  # type: ignore
+
+    def set_playhead(self, timestamp: Miliseconds) -> None:
         duration = self.get_media_duration(blocking=False)
         if duration <= 0:
             return
 
-        new_time = self.player.get_time() + change  # type: ignore
-        new_time = max(min(new_time, duration), 0)  # type: ignore
-        self.player.set_time(new_time)  # type: ignore
+        timestamp = max(min(timestamp, duration), 0)
+        self.player.set_time(timestamp)  # type: ignore
 
     def toggle_pause(self) -> None:
         self.player.pause()  # type: ignore
