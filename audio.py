@@ -27,11 +27,8 @@ class AudioInstance:
     def wait_until_playing(self, timeout: float = 10.0) -> bool:
         start_time = time.time()
         while time.time() - start_time < timeout:
-            state = self.player.get_state()  # type: ignore
-            if state in (vlc.State.Playing, vlc.State.Paused):  # type: ignore
+            if self.player.get_state() in (vlc.State.Playing, vlc.State.Paused):  # type: ignore
                 return True
-            if state in (vlc.State.Ended, vlc.State.Stopped, vlc.State.Error):  # type: ignore
-                return False
             time.sleep(0.05)
         return False
 

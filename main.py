@@ -29,11 +29,12 @@ def update_timestamp_callback(event: vlc.EventType, pbar: tqdm) -> None:  # type
 def mainloop(anime: str) -> None:
     urls = net.get_theme_urls(anime)
     for name, url in urls.items():
-        AudioInstance().play_from_url(url)
+        while True:
+            AudioInstance().play_from_url(url)
+            if AudioInstance().wait_until_playing(timeout=10.0):
+               break 
 
-        if not AudioInstance().wait_until_playing(timeout=10.0):
-            print(f"TODO: Skipped {name}")
-            continue
+            print(f"Error playing {name}. Retrying")
 
         pbar = menu.create_progress_bar(
             name, 
