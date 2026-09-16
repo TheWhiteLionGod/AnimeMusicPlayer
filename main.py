@@ -82,7 +82,7 @@ def main():
     try:
         while True: 
             anime = max(animes, key=lambda k: animes[k]) \
-                if algorithm.watch_new_anime() else \
+                if algorithm.watch_new_anime() or len(watchlist) == 0 else \
                 algorithm.choose_random(watchlist)
 
             mainloop(anime, skiplist)
