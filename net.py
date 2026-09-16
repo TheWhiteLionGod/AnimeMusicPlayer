@@ -1,37 +1,32 @@
 from const import *
 import requests
 
-def get_animes(username: str) -> dict[str, float]:
+def get_animes(username: str) -> dict[int, float]:
     variables: dict[str, str] = {'username': username}
-    response = requests.post(ANILIST_URL, json={'query': QUERY, 'variables': variables})
+    response = requests.post(ANILIST_URL, json={'query': ANILIST_QUERY, 'variables': variables})
     response.raise_for_status()
 
     data = response.json()
     lists = data['data']['MediaListCollection']['lists']
 
-    animes: dict[str, float] = {
-        entry['media']['title']['english']: entry['score'] 
+    animes: dict[int, float] = {
+        entry['media']['id']: entry['score'] 
         for lst in lists 
         for entry in lst['entries']
     }
     return animes
 
-def get_theme_urls(anime_name: str) -> dict[str, str]:
-    query: dict[str, str] = {
-        "q": anime_name,
-        "include[anime]": "animethemes.animethemeentries.videos"
-    }
-
-    response = requests.get(ANIMETHEMES_URL, params=query)
+def get_theme_urls(anime_id: int) -> dict[str, str]:
+    variables: dict[str, int] = {"id": anime_id}
+    response = requests.post(ANIMETHEMES_URL, json={'query': ANIMETHEMES_QUERY, 'variables': variables})
     response.raise_for_status()
 
     data = response.json()
-    anime = data["search"]["anime"][0]
+    themes = data["data"]["findAnimeByExternalSite"][0]["animethemes"]
 
-    urls: dict[str, str] = {
+    return {
         video["filename"]: video["link"]
-        for theme in anime['animethemes']
-        for entry in theme['animethemeentries']
-        for video in entry['videos']
+        for theme in themes
+        for entry in theme["animethemeentries"]
+        for video in entry["videos"]["nodes"]
     }
-    return urls

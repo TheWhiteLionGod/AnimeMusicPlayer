@@ -11,7 +11,7 @@ import menu
 import net
 import db
 
-def remove_watched_animes(animes: dict[str, float], watchlist: list[str]) -> dict[str, float]:
+def remove_watched_animes(animes: dict[int, float], watchlist: list[int]) -> dict[int, float]:
     for anime in watchlist:
         animes.pop(anime, None)
     return animes
@@ -26,9 +26,12 @@ def update_timestamp_callback(event: vlc.EventType, pbar: tqdm) -> None:  # type
     pbar.unit = f"{cur_ts}/{total_ts}"
     pbar.refresh()
 
-def mainloop(anime: str) -> None:
+def mainloop(anime: int, skiplist: list[str]) -> None:
     urls = net.get_theme_urls(anime)
     for name, url in urls.items():
+        if name in skiplist:
+            continue
+
         while True:
             AudioInstance().play_from_url(url)
             if AudioInstance().wait_until_playing(timeout=10.0):
@@ -51,6 +54,10 @@ def mainloop(anime: str) -> None:
             while AudioInstance().is_playing:
                 time.sleep(0.1)
 
+            if pbar.n < pbar.total / 2:
+                db.append_skip_song(name)
+                skiplist.append(name)
+
         finally:
             AudioInstance().detach_callback_from_event(  # type: ignore
                 vlc.EventType.MediaPlayerTimeChanged  # type: ignore
@@ -60,6 +67,7 @@ def mainloop(anime: str) -> None:
 
 def main():
     watchlist = db.get_watched_animes()
+    skiplist = db.get_skip_songs()
     animes = remove_watched_animes(
         net.get_animes(USERNAME), 
         watchlist
@@ -77,7 +85,7 @@ def main():
                 if algorithm.watch_new_anime() else \
                 algorithm.choose_random(watchlist)
 
-            mainloop(anime)
+            mainloop(anime, skiplist)
             if anime not in watchlist: 
                 db.append_watched_animes(anime)
                 animes.pop(anime)
