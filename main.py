@@ -29,7 +29,7 @@ def update_timestamp_callback(event: vlc.EventType, pbar: tqdm) -> None:  # type
 def mainloop(anime: int, skiplist: list[str]) -> None:
     urls = net.get_theme_urls(anime)
     for name, url in urls.items():
-        if name in skiplist:
+        if name in skiplist or "NCBD1080" in name:
             continue
 
         while True:
