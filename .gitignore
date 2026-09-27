@@ -8,3 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Watchlist Files
+watchlist.txt
+skiplist.txt

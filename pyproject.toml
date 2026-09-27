@@ -1,7 +1,7 @@
 [project]
 name = "animemusicplayer"
 version = "0.1.0"
-description = "Add your description here"
+description = "An anime music player that's incredibly effective"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
