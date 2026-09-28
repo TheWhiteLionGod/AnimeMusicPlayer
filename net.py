@@ -22,8 +22,12 @@ def get_theme_urls(anime_id: int) -> dict[str, str]:
     response.raise_for_status()
 
     data = response.json()
-    themes = data["data"]["findAnimeByExternalSite"][0]["animethemes"]
-
+    themes = data["data"]["findAnimeByExternalSite"]
+    if not themes:
+        print(f"No Themes Out For {anime_id} :(")
+        return {}
+    
+    themes = themes[0]["animethemes"]
     return {
         video["filename"]: video["link"]
         for theme in themes
