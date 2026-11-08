@@ -78,6 +78,8 @@ def main():
     keyboard.add_hotkey("ctrl+shift+k", AudioInstance().toggle_pause)
     keyboard.add_hotkey("ctrl+shift+l", AudioInstance().move_playhead, (10_000,))
     keyboard.add_hotkey("ctrl+shift+;", AudioInstance().stop_audio)
+    keyboard.add_hotkey("ctrl+shift+i", AudioInstance().set_playback_mode, (AudioInstance.LOOP_MODE,))
+    keyboard.add_hotkey("ctrl+shift+o", AudioInstance().set_playback_mode, (AudioInstance.NORMAL_MODE,))
 
     try:
         while True: 
